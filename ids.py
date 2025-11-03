@@ -1,9 +1,4 @@
-"""
-CICIDS2017 Intrusion Detection System - Memory Optimized & Fixed
-Author: Your Name
-Description: Multi-class ML-based Network Intrusion Detection System
-Detects: BENIGN traffic + Multiple attack types (DDoS, PortScan, Brute Force, etc.)
-"""
+
 
 import pandas as pd
 import numpy as np
@@ -19,7 +14,7 @@ from sklearn.tree import DecisionTreeClassifier
 import warnings
 warnings.filterwarnings('ignore')
 
-# Set style for better visualizations
+
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
 
@@ -60,7 +55,7 @@ class CICIDS2017_MultiClass_IDS:
         
         print(f"\n📂 Loading from: {self.filepath}")
         
-        # Load with sampling if specified
+       
         if self.sample_size:
             print(f"⚡ Sampling {self.sample_size:,} rows for memory efficiency...")
             self.df = pd.read_csv(self.filepath, nrows=self.sample_size)
@@ -73,10 +68,10 @@ class CICIDS2017_MultiClass_IDS:
         print(f"  Features: {len(self.df.columns)}")
         print(f"  Memory Usage: {self.df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
         
-        # Clean column names
+
         self.df.columns = self.df.columns.str.strip()
         
-        # Find label column
+        
         possible_labels = ['Attack Type', 'Label', 'Class', 'Attack', 'Type']
         self.label_col = None
         
@@ -90,7 +85,7 @@ class CICIDS2017_MultiClass_IDS:
             self.label_col = self.df.columns[-1]
             print(f"\n⚠️  Using last column as label: '{self.label_col}'")
         
-        # Display attack distribution
+        
         print(f"\n🎯 Attack Type Distribution:")
         print("=" * 70)
         attack_counts = self.df[self.label_col].value_counts()
@@ -110,12 +105,12 @@ class CICIDS2017_MultiClass_IDS:
         print("PREPROCESSING DATA")
         print("=" * 70)
         
-        # Data quality check
+       
         print(f"\n🔍 Data Quality Check:")
         print(f"  Missing values: {self.df.isnull().sum().sum()}")
         print(f"  Duplicate rows: {self.df.duplicated().sum()}")
         
-        # Handle issues
+      
         if self.df.isnull().sum().sum() > 0:
             self.df = self.df.fillna(0)
             print("  ✓ Filled missing values")
@@ -123,12 +118,10 @@ class CICIDS2017_MultiClass_IDS:
         if self.df.duplicated().sum() > 0:
             self.df = self.df.drop_duplicates()
             print("  ✓ Removed duplicates")
-        
-        # Separate features and labels
+       
         X = self.df.drop(columns=[self.label_col])
         y = self.df[self.label_col]
         
-        # Classification setup
         if self.classification_type == 'binary':
             print(f"\n🎯 Binary Classification Mode: BENIGN vs ATTACK")
             y = y.apply(lambda x: 0 if 'BENIGN' in str(x).upper() or 'NORMAL' in str(x).upper() else 1)
@@ -138,17 +131,16 @@ class CICIDS2017_MultiClass_IDS:
             y = self.label_encoder.fit_transform(y)
             self.class_names = self.label_encoder.classes_
         
-        # Select numeric features only
+        
         numeric_cols = X.select_dtypes(include=[np.number]).columns
         X = X[numeric_cols]
         
         print(f"\n✓ Features: {len(numeric_cols)} numeric columns selected")
-        
-        # Handle infinite values
+      
         X = X.replace([np.inf, -np.inf], np.nan)
         X = X.fillna(0)
         
-        # Split data
+       
         print(f"\n📊 Splitting data (80% train, 20% test)...")
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             X, y, test_size=0.2, random_state=42, stratify=y
@@ -157,13 +149,13 @@ class CICIDS2017_MultiClass_IDS:
         print(f"  Training samples: {len(self.X_train):,}")
         print(f"  Testing samples: {len(self.X_test):,}")
         
-        # Scale features
+        
         print(f"\n🔧 Scaling features...")
         self.X_train = self.scaler.fit_transform(self.X_train)
         self.X_test = self.scaler.transform(self.X_test)
         print("  ✓ Features scaled with StandardScaler")
         
-        # Show class distribution (NO SMOTE)
+        
         print(f"\n⚖️  Class Distribution (Using class weights instead of SMOTE):")
         unique, counts = np.unique(self.y_train, return_counts=True)
         for cls, cnt in zip(unique, counts):
@@ -182,7 +174,7 @@ class CICIDS2017_MultiClass_IDS:
         print("TRAINING MACHINE LEARNING MODELS")
         print("=" * 70)
         
-        # Define models with class weights
+      
         self.models = {
             'Random Forest': RandomForestClassifier(
                 n_estimators=100, 
@@ -206,17 +198,16 @@ class CICIDS2017_MultiClass_IDS:
             )
         }
         
-        # Train each model
         for name, model in self.models.items():
             print(f"\n🤖 Training {name}...")
             model.fit(self.X_train, self.y_train)
             print(f"  ✓ Training completed")
             
-            # Make predictions
+          
             print(f"  📊 Evaluating on test set...")
             y_pred = model.predict(self.X_test)
             
-            # Calculate metrics
+          
             if self.classification_type == 'binary':
                 y_pred_proba = model.predict_proba(self.X_test)[:, 1]
                 self.results[name] = {
@@ -249,7 +240,7 @@ class CICIDS2017_MultiClass_IDS:
         print("MODEL EVALUATION RESULTS")
         print("=" * 70)
         
-        # Create results dataframe
+       
         results_data = {
             'Model': list(self.results.keys()),
             'Accuracy': [self.results[m]['accuracy'] for m in self.results],
@@ -266,12 +257,12 @@ class CICIDS2017_MultiClass_IDS:
         print("\n📊 Performance Metrics:")
         print(results_df.to_string(index=False))
         
-        # Find best model
+       
         best_model_name = results_df.loc[results_df['F1-Score'].idxmax(), 'Model']
         print(f"\n🏆 Best Model: {best_model_name}")
         print(f"   F1-Score: {results_df.loc[results_df['F1-Score'].idxmax(), 'F1-Score']:.4f}")
         
-        # Detailed classification report
+      
         print(f"\n📋 Detailed Classification Report - {best_model_name}:")
         print("=" * 70)
         print(classification_report(
@@ -281,7 +272,7 @@ class CICIDS2017_MultiClass_IDS:
             zero_division=0
         ))
         
-        # Per-class performance for multi-class
+        
         if self.classification_type == 'multiclass':
             print(f"\n🎯 Per-Attack Detection Performance ({best_model_name}):")
             print("=" * 70)
@@ -317,7 +308,7 @@ class CICIDS2017_MultiClass_IDS:
         """Visualizations for binary classification"""
         fig = plt.figure(figsize=(16, 10))
         
-        # 1. Model Comparison
+       
         ax1 = plt.subplot(2, 3, 1)
         metrics_df = pd.DataFrame({
             'Model': list(self.results.keys()),
@@ -336,7 +327,6 @@ class CICIDS2017_MultiClass_IDS:
         ax1.set_ylim([0, 1.1])
         ax1.grid(axis='y', alpha=0.3)
         
-        # 2-4. Confusion Matrices
         for idx, (name, results) in enumerate(list(self.results.items())[:3], start=2):
             ax = plt.subplot(2, 3, idx)
             cm = confusion_matrix(self.y_test, results['predictions'])
@@ -348,7 +338,7 @@ class CICIDS2017_MultiClass_IDS:
             ax.set_ylabel('Actual')
             ax.set_xlabel('Predicted')
         
-        # 5. ROC Curves
+       
         ax5 = plt.subplot(2, 3, 5)
         for name, results in self.results.items():
             if results['probabilities'] is not None:
@@ -363,7 +353,7 @@ class CICIDS2017_MultiClass_IDS:
         ax5.legend(loc='lower right', fontsize=8)
         ax5.grid(True, alpha=0.3)
         
-        # 6. Feature Importance
+       
         ax6 = plt.subplot(2, 3, 6)
         rf_model = self.models['Random Forest']
         feature_importance = rf_model.feature_importances_
@@ -380,7 +370,7 @@ class CICIDS2017_MultiClass_IDS:
         """Visualizations for multi-class classification"""
         fig = plt.figure(figsize=(18, 12))
         
-        # 1. Model Comparison
+      
         ax1 = plt.subplot(2, 3, 1)
         metrics_df = pd.DataFrame({
             'Model': list(self.results.keys()),
@@ -399,12 +389,12 @@ class CICIDS2017_MultiClass_IDS:
         ax1.set_ylim([0, 1.1])
         ax1.grid(axis='y', alpha=0.3)
         
-        # 2. Best Model Confusion Matrix
+       
         best_model_name = max(self.results, key=lambda x: self.results[x]['f1'])
         ax2 = plt.subplot(2, 3, (2, 5))
         cm = confusion_matrix(self.y_test, self.results[best_model_name]['predictions'])
         
-        # Normalize confusion matrix
+        
         cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         
         sns.heatmap(cm_normalized, annot=True, fmt='.2f', cmap='YlOrRd', ax=ax2,
@@ -418,7 +408,7 @@ class CICIDS2017_MultiClass_IDS:
         plt.setp(ax2.get_xticklabels(), rotation=45, ha='right', fontsize=8)
         plt.setp(ax2.get_yticklabels(), rotation=0, fontsize=8)
         
-        # 3. Attack Distribution
+       
         ax3 = plt.subplot(2, 3, 3)
         test_distribution = pd.Series(self.y_test).value_counts().sort_index()
         attack_names = [self.class_names[i] for i in test_distribution.index]
@@ -427,7 +417,7 @@ class CICIDS2017_MultiClass_IDS:
         ax3.set_title('Test Set Distribution', fontsize=10, fontweight='bold')
         ax3.grid(axis='x', alpha=0.3)
         
-        # 4. Per-Class Accuracy
+      
         ax4 = plt.subplot(2, 3, 6)
         y_pred = self.results[best_model_name]['predictions']
         per_class_acc = []
@@ -448,7 +438,7 @@ class CICIDS2017_MultiClass_IDS:
         ax4.set_xlim([0, 1])
         ax4.grid(axis='x', alpha=0.3)
         
-        # Add percentage labels
+        
         for i, (attack, acc) in enumerate(zip(self.class_names, per_class_acc)):
             ax4.text(acc + 0.02, i, f'{acc:.1%}', va='center', fontsize=8)
     
@@ -488,10 +478,10 @@ def main():
     print("   CICIDS2017 ADVANCED INTRUSION DETECTION SYSTEM")
     print("=" * 70)
     
-    # Dataset path
+    
     filepath = r'C:\Users\Al Salik Computerz\Downloads\archive\cicids2017_cleaned.csv'
     
-    # Classification type
+    
     classification_type = 'multiclass'
     
     # CRITICAL: Set sample size to avoid memory errors
@@ -541,4 +531,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     main()
